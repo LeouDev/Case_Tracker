@@ -120,7 +120,7 @@ body::before {
   font-weight: 800;
   letter-spacing: -2px;
   line-height: 1;
-  background: linear-gradient(120deg, #f0f4ff 0%, var(--blue2) 50%, var(--cyan) 100%);
+  background: linear-gradient(120deg, #ff6b6b 0%, #f87171 50%, #fca5a5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-family: var(--mono);
@@ -216,12 +216,13 @@ body::before {
 
 /* ── FORM ── */
 .form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
 }
 
-@media (max-width: 680px) { .form-grid { grid-template-columns: 1fr; } }
+@media (max-width: 680px) { .form-grid { flex-direction: column; } }
 
 .field { display: flex; flex-direction: column; gap: 7px; }
 .field.full { grid-column: 1 / -1; }
@@ -515,6 +516,12 @@ tbody tr:hover { background: rgba(59,130,246,0.04); }
 /* Pending → Orange */
 .b-pending   { background: rgba(251,146,60,0.14); color: #fb923c; border: 1px solid rgba(251,146,60,0.25); }
 
+/* Input Needed → Purple */
+.b-input     { background: rgba(167,139,250,0.14); color: #a78bfa; border: 1px solid rgba(167,139,250,0.25); }
+
+/* Awaiting Patient → Pink */
+.b-awaiting  { background: rgba(244,114,182,0.14); color: #f472b6; border: 1px solid rgba(244,114,182,0.25); }
+
 .no-data {
   text-align: center; padding: 40px 20px;
   color: var(--text3); font-family: var(--mono); font-size: 11px;
@@ -689,6 +696,8 @@ tbody tr:hover { background: rgba(59,130,246,0.04); }
 .row-submitted{ border-left: 3px solid #60a5fa; }
 .row-paf      { border-left: 3px solid #fbbf24; }
 .row-ready    { border-left: 3px solid #22d3ee; }
+.row-input    { border-left: 3px solid #a78bfa; }
+.row-awaiting { border-left: 3px solid #f472b6; }
 </style>
 </head>
 <body>
@@ -723,6 +732,8 @@ tbody tr:hover { background: rgba(59,130,246,0.04); }
           <option value="PAF">PAF</option>
           <option value="PA Submitted">PA Submitted</option>
           <option value="Approved">Approved</option>
+          <option value="Input Needed">Input Needed</option>
+          <option value="Awaiting Patient">Awaiting Patient</option>
         </select>
       </div>
       <div class="field"></div>
@@ -758,7 +769,7 @@ tbody tr:hover { background: rgba(59,130,246,0.04); }
     <div class="brand">
       <div class="brand-tag">Live · Supabase</div>
       <h1>PA Tracker</h1>
-      <p>Prior Authorization Workflow</p>
+      <p>SquadHealth AI</p>
     </div>
     <div class="clock-block">
       <div class="clock-time" id="ct">--:--:-- --</div>
@@ -780,13 +791,13 @@ tbody tr:hover { background: rgba(59,130,246,0.04); }
 
           <div class="field">
             <label>Key ID</label>
-            <input type="text" id="f-kid" placeholder="e.g. PA-2024-001" autocomplete="off"/>
+            <input type="text" id="f-kid" placeholder="PA-2024-001" autocomplete="off" maxlength="15" style="width:160px;"/>
           </div>
 
           <div class="field">
             <label>Status</label>
-            <select id="f-status">
-              <option value="">— Select Status —</option>
+            <select id="f-status" style="width:auto; min-width:120px;">
+              <option value="">— Select —</option>
               <option value="PAF">PAF</option>
               <option value="PA Ready to Review">PA Ready to Review</option>
               <option value="Denied">Denied</option>
@@ -795,25 +806,25 @@ tbody tr:hover { background: rgba(59,130,246,0.04); }
 
           <div class="field">
             <label>New Status</label>
-            <select id="f-newstatus">
-              <option value="">— Select New Status —</option>
+            <select id="f-newstatus" style="width:auto; min-width:150px;">
+              <option value="">— Select —</option>
               <option value="PA Ready to Review">PA Ready to Review</option>
               <option value="PAF">PAF</option>
               <option value="PA Submitted">PA Submitted</option>
               <option value="Approved">Approved</option>
+              <option value="Input Needed">Input Needed</option>
+              <option value="Awaiting Patient">Awaiting Patient</option>
             </select>
           </div>
 
-          <div class="field" style="visibility:hidden"></div>
-
-          <div class="field full">
+          <div class="field" style="flex:1; min-width:180px;">
             <label>Remarks</label>
-            <textarea id="f-remarks" placeholder="Optional notes or comments..."></textarea>
+            <input type="text" id="f-remarks" placeholder="Optional notes or comments..." style="width:100%;"/>
           </div>
 
         </div>
 
-        <div class="submit-row">
+        <div class="submit-row" style="margin-top:12px;">
           <span class="status-msg" id="f-msg"></span>
           <button class="btn btn-primary" id="f-btn" onclick="submitEntry()">
             Submit Entry
@@ -858,7 +869,7 @@ tbody tr:hover { background: rgba(59,130,246,0.04); }
           <div class="prog-row">
             <div class="prog-top">
               <span class="prog-name">Daily</span>
-              <span class="prog-nums" id="p-day-lbl">— / 10</span>
+              <span class="prog-nums" id="p-day-lbl">— / 25</span>
             </div>
             <div class="prog-track">
               <div class="prog-fill prog-d" id="p-day" style="width:0%"></div>
@@ -933,7 +944,7 @@ tbody tr:hover { background: rgba(59,130,246,0.04); }
 const SB_URL = 'https://cuskmyswnptjgjwualne.supabase.co';
 const SB_KEY = 'sb_publishable_1Us4RGSlRzlYWKrAnxH6Hg_DP77py2M';
 const TABLE  = 'entries';
-const GOALS  = { day: 10, week: 50, month: 200 };
+const GOALS  = { day: 25, week: 50, month: 200 };
 
 const HEADERS = {
   'Content-Type':  'application/json',
@@ -1082,7 +1093,9 @@ const badgeCls = {
   'Denied':             'b-denied',
   'PA Submitted':       'b-submitted',
   'Approved':           'b-approved',
-  'Pending':            'b-pending'
+  'Pending':            'b-pending',
+  'Input Needed':       'b-input',
+  'Awaiting Patient':   'b-awaiting'
 };
 
 const rowCls = {
@@ -1090,7 +1103,9 @@ const rowCls = {
   'Denied':             'row-denied',
   'PA Submitted':       'row-submitted',
   'PAF':                'row-paf',
-  'PA Ready to Review': 'row-ready'
+  'PA Ready to Review': 'row-ready',
+  'Input Needed':       'row-input',
+  'Awaiting Patient':   'row-awaiting'
 };
 
 function badge(v) {
@@ -1320,6 +1335,39 @@ function downloadCSV() {
   URL.revokeObjectURL(url);
   showToast('CSV downloaded');
 }
+
+// ── AUTO-SIZE SELECTS & KEY ID ───────────────────────────────────────────────
+function resizeSelect(sel) {
+  const tmp = document.createElement('select');
+  tmp.style.cssText = 'position:absolute;visibility:hidden;font-family:inherit;font-size:12px;padding:11px 38px 11px 14px;';
+  const opt = document.createElement('option');
+  opt.textContent = sel.options[sel.selectedIndex]?.text || sel.options[0].text;
+  tmp.appendChild(opt);
+  document.body.appendChild(tmp);
+  sel.style.width = (tmp.offsetWidth + 4) + 'px';
+  document.body.removeChild(tmp);
+}
+
+// Status select
+const statusSel = document.getElementById('f-status');
+resizeSelect(statusSel);
+statusSel.addEventListener('change', () => resizeSelect(statusSel));
+
+// New Status select
+const newStatusSel = document.getElementById('f-newstatus');
+resizeSelect(newStatusSel);
+newStatusSel.addEventListener('change', () => resizeSelect(newStatusSel));
+
+// Key ID — fixed width for 15 chars
+(function() {
+  const input = document.getElementById('f-kid');
+  const tmp = document.createElement('span');
+  tmp.style.cssText = 'position:absolute;visibility:hidden;font-family:inherit;font-size:12px;padding:11px 14px;white-space:pre;';
+  tmp.textContent = 'A'.repeat(15);
+  document.body.appendChild(tmp);
+  input.style.width = (tmp.offsetWidth + 4) + 'px';
+  document.body.removeChild(tmp);
+})();
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadEntries();
