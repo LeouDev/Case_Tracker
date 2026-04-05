@@ -1,372 +1,764 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>PA Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-  :root {
-    --bg: #0a0d14;
-    --surface: #111520;
-    --surface2: #171d2e;
-    --border: #1f2a45;
-    --accent: #4f8ef7;
-    --accent2: #7c3aed;
-    --green: #22c55e;
-    --yellow: #f59e0b;
-    --red: #ef4444;
-    --cyan: #06b6d4;
-    --text: #e8edf8;
-    --text2: #7a8ba8;
-    --text3: #3d4f6b;
-    --glow: rgba(79,142,247,0.15);
-    --font-head: 'Syne', sans-serif;
-    --font-mono: 'DM Mono', monospace;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: var(--bg); color: var(--text); font-family: var(--font-head); min-height: 100vh; }
+:root {
+  --bg:       #07090f;
+  --bg2:      #0d1117;
+  --surface:  #111827;
+  --surface2: #1a2236;
+  --border:   #1f2d45;
+  --border2:  #263650;
+  --blue:     #3b82f6;
+  --blue2:    #60a5fa;
+  --cyan:     #22d3ee;
+  --green:    #34d399;
+  --yellow:   #fbbf24;
+  --red:      #f87171;
+  --purple:   #a78bfa;
+  --text:     #f0f4ff;
+  --text2:    #8899bb;
+  --text3:    #3d5278;
+  --mono:     'JetBrains Mono', monospace;
+  --sans:     'Outfit', sans-serif;
+  --glow-b:   rgba(59,130,246,0.18);
+  --glow-g:   rgba(52,211,153,0.15);
+  --r:        14px;
+}
 
-  body::before {
-    content: ''; position: fixed; inset: 0;
-    background-image:
-      linear-gradient(rgba(79,142,247,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(79,142,247,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none; z-index: 0;
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .wrapper { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 40px 24px 80px; }
+html { scroll-behavior: smooth; }
 
-  /* HEADER */
-  header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; flex-wrap: wrap; gap: 12px; }
-  .logo-block h1 { font-size: clamp(28px,5vw,42px); font-weight: 800; letter-spacing: -1px; line-height: 1; background: linear-gradient(135deg, var(--accent), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .logo-block p  { font-family: var(--font-mono); font-size: 11px; color: var(--text3); margin-top: 4px; letter-spacing: 2px; text-transform: uppercase; }
-  .clock { font-family: var(--font-mono); font-size: 12px; color: var(--text2); text-align: right; line-height: 1.6; }
-  .clock .time { font-size: 18px; color: var(--accent); font-weight: 500; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  /* CARDS */
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; position: relative; overflow: hidden; animation: fadeIn 0.4s ease both; }
-  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.4; }
-  .card-title { font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 20px; }
+/* ── NOISE TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
 
-  /* FORM */
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media(max-width:600px){ .form-grid { grid-template-columns: 1fr; } }
-  .field { display: flex; flex-direction: column; gap: 8px; }
-  .field label { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 1.5px; text-transform: uppercase; }
-  .field input, .field select, .field textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: var(--font-mono); font-size: 14px; padding: 12px 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; width: 100%; }
-  .field select { -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234f8ef7' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; cursor: pointer; }
-  .field textarea { resize: vertical; min-height: 80px; }
-  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
-  .field.span2 { grid-column: span 2; }
-  @media(max-width:600px){ .field.span2 { grid-column: span 1; } }
+/* ── GRID ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
 
-  /* BUTTON */
-  .submit-row { margin-top: 20px; display: flex; justify-content: flex-end; align-items: center; gap: 16px; flex-wrap: wrap; }
-  .btn { font-family: var(--font-head); font-weight: 700; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; padding: 14px 32px; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
-  .btn-primary { background: linear-gradient(135deg, var(--accent), #3b6fd4); color: #fff; box-shadow: 0 4px 20px rgba(79,142,247,0.3); }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(79,142,247,0.45); }
-  .btn-primary:active { transform: translateY(0); }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.page {
+  position: relative; z-index: 1;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 48px 24px 100px;
+}
 
-  .msg { font-family: var(--font-mono); font-size: 12px; padding: 8px 16px; border-radius: 8px; display: none; }
-  .msg.success { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); display: block; }
-  .msg.error   { background: rgba(239,68,68,0.1);  color: var(--red);   border: 1px solid rgba(239,68,68,0.2);  display: block; }
-  .msg.loading { background: rgba(79,142,247,0.1); color: var(--accent); border: 1px solid rgba(79,142,247,0.2); display: block; }
+/* ── HEADER ── */
+.header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 52px; flex-wrap: wrap; gap: 20px;
+}
 
-  /* STATS */
-  .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
-  @media(max-width:560px){ .stats-row { grid-template-columns: 1fr; } }
-  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; text-align: center; position: relative; overflow: hidden; animation: fadeIn 0.4s ease both; }
-  .stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; }
-  .stat-card.day::after   { background: var(--cyan); }
-  .stat-card.week::after  { background: var(--accent); }
-  .stat-card.month::after { background: var(--accent2); }
-  .stat-card:nth-child(2) { animation-delay: 0.05s; }
-  .stat-card:nth-child(3) { animation-delay: 0.10s; }
-  .stat-label { font-size: 10px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
-  .stat-num   { font-size: 40px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
-  .stat-card.day   .stat-num { color: var(--cyan); }
-  .stat-card.week  .stat-num { color: var(--accent); }
-  .stat-card.month .stat-num { color: var(--accent2); }
-  .stat-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text3); }
+.brand { display: flex; flex-direction: column; gap: 6px; }
 
-  /* PROGRESS */
-  .progress-item { margin-bottom: 20px; }
-  .progress-item:last-child { margin-bottom: 0; }
-  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .progress-label { font-size: 12px; font-weight: 600; color: var(--text2); letter-spacing: 1px; text-transform: uppercase; }
-  .progress-meta  { font-family: var(--font-mono); font-size: 11px; color: var(--text3); }
-  .progress-track { height: 8px; background: var(--surface2); border-radius: 99px; overflow: hidden; border: 1px solid var(--border); }
-  .progress-fill  { height: 100%; border-radius: 99px; transition: width 1s cubic-bezier(0.4,0,0.2,1); position: relative; }
-  .progress-fill::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 20px; background: rgba(255,255,255,0.3); border-radius: 99px; filter: blur(4px); }
-  .day-fill   { background: linear-gradient(90deg, #06b6d4, #4f8ef7); }
-  .week-fill  { background: linear-gradient(90deg, #4f8ef7, #7c3aed); }
-  .month-fill { background: linear-gradient(90deg, #7c3aed, #ec4899); }
+.brand-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--blue2);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  width: fit-content;
+  margin-bottom: 4px;
+}
 
-  /* TABLE */
-  .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead tr { background: var(--surface2); }
-  th { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); padding: 12px 16px; text-align: left; white-space: nowrap; }
-  td { padding: 12px 16px; border-top: 1px solid var(--border); font-family: var(--font-mono); font-size: 12px; color: var(--text2); white-space: nowrap; }
-  tbody tr:hover { background: rgba(79,142,247,0.04); }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-  .badge-paf       { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
-  .badge-ready     { background: rgba(6,182,212,0.15);  color: var(--cyan);   border: 1px solid rgba(6,182,212,0.25); }
-  .badge-denied    { background: rgba(239,68,68,0.15);  color: var(--red);    border: 1px solid rgba(239,68,68,0.25); }
-  .badge-submitted { background: rgba(79,142,247,0.15); color: var(--accent); border: 1px solid rgba(79,142,247,0.25); }
-  .badge-approved  { background: rgba(34,197,94,0.15);  color: var(--green);  border: 1px solid rgba(34,197,94,0.25); }
-  .key-id { color: var(--text); font-weight: 500; }
-  .no-data { text-align: center; padding: 40px; color: var(--text3); font-family: var(--font-mono); font-size: 12px; }
+.brand-tag::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s ease infinite;
+}
 
-  .refresh-btn { font-family: var(--font-mono); font-size: 11px; padding: 7px 14px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text2); cursor: pointer; transition: all 0.2s; letter-spacing: 1px; }
-  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
 
-  /* TOAST */
-  #toast { position: fixed; bottom: 30px; right: 30px; background: var(--surface); border: 1px solid var(--green); color: var(--green); font-family: var(--font-mono); font-size: 13px; padding: 14px 24px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); transform: translateY(80px); opacity: 0; transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1); z-index: 1000; pointer-events: none; }
-  #toast.show { transform: translateY(0); opacity: 1; }
+.brand h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  line-height: 1;
+  background: linear-gradient(120deg, #f0f4ff 0%, var(--blue2) 50%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(79,142,247,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.brand p {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.clock-block {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 20px;
+}
+
+.clock-time {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--cyan);
+  letter-spacing: 2px;
+}
+
+.clock-date {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1px;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.card:nth-child(2) { animation-delay: 0.05s; }
+.card:nth-child(3) { animation-delay: 0.10s; }
+.card:nth-child(4) { animation-delay: 0.15s; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-shine {
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(59,130,246,0.5) 50%, transparent 100%);
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 24px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ── FORM ── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 580px) { .form-grid { grid-template-columns: 1fr; } }
+
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field.full { grid-column: 1 / -1; }
+
+.field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.field input,
+.field select,
+.field textarea {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 13px 16px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.field select {
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2360a5fa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+  cursor: pointer;
+}
+
+.field textarea { min-height: 88px; resize: vertical; }
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--blue);
+  background: var(--surface2);
+  box-shadow: 0 0 0 3px var(--glow-b);
+}
+
+/* ── SUBMIT ROW ── */
+.submit-row {
+  margin-top: 24px;
+  display: flex; justify-content: flex-end; align-items: center;
+  gap: 16px; flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 13px 32px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+
+.btn-primary {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 4px 24px rgba(59,130,246,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--blue2);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(59,130,246,0.5);
+}
+
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.status-msg {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  display: none;
+}
+.status-msg.show  { display: block; }
+.status-msg.ok    { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+.status-msg.err   { background: rgba(248,113,113,0.1); color: var(--red);   border: 1px solid rgba(248,113,113,0.2); }
+.status-msg.wait  { background: rgba(59,130,246,0.1);  color: var(--blue2); border: 1px solid rgba(59,130,246,0.2); }
+
+/* ── STATS ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 540px) { .stats-grid { grid-template-columns: 1fr; } }
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 22px 20px 20px;
+  position: relative; overflow: hidden;
+  animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.stat:nth-child(1) { animation-delay: 0.05s; }
+.stat:nth-child(2) { animation-delay: 0.10s; }
+.stat:nth-child(3) { animation-delay: 0.15s; }
+
+.stat-glow {
+  position: absolute; bottom: -20px; right: -20px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  filter: blur(30px);
+  opacity: 0.25;
+}
+
+.stat-d .stat-glow { background: var(--cyan); }
+.stat-w .stat-glow { background: var(--blue); }
+.stat-m .stat-glow { background: var(--purple); }
+
+.stat-label {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 10px;
+}
+
+.stat-value {
+  font-size: 44px; font-weight: 800;
+  line-height: 1; margin-bottom: 4px;
+}
+
+.stat-d .stat-value { color: var(--cyan); }
+.stat-w .stat-value { color: var(--blue2); }
+.stat-m .stat-value { color: var(--purple); }
+
+.stat-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
+/* ── PROGRESS ── */
+.progress-list { display: flex; flex-direction: column; gap: 22px; }
+
+.prog-row {}
+.prog-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.prog-name { font-size: 12px; font-weight: 600; color: var(--text2); letter-spacing: 0.5px; }
+.prog-nums { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+.prog-track {
+  height: 6px; background: var(--bg2);
+  border-radius: 99px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.prog-fill {
+  height: 100%; border-radius: 99px;
+  transition: width 1.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.prog-d { background: linear-gradient(90deg, var(--cyan), #38bdf8); }
+.prog-w { background: linear-gradient(90deg, var(--blue), var(--blue2)); }
+.prog-m { background: linear-gradient(90deg, var(--purple), #c084fc); }
+
+/* ── TABLE ── */
+.table-head {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 20px;
+  flex-wrap: wrap; gap: 12px;
+}
+
+.refresh-btn {
+  font-family: var(--mono); font-size: 11px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+
+.refresh-btn:hover { border-color: var(--blue); color: var(--blue2); }
+
+.refresh-btn svg { transition: transform 0.4s; }
+.refresh-btn:hover svg { transform: rotate(180deg); }
+
+.tbl-wrap {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+table { width: 100%; border-collapse: collapse; }
+
+thead tr { background: var(--bg2); }
+
+th {
+  font-family: var(--mono);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text3); padding: 13px 16px;
+  text-align: left; white-space: nowrap;
+}
+
+td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono); font-size: 12px;
+  color: var(--text2); white-space: nowrap;
+}
+
+tbody tr { transition: background 0.15s; }
+tbody tr:hover { background: rgba(59,130,246,0.04); }
+
+.kid { color: var(--text); font-weight: 500; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 99px;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.badge::before {
+  content: ''; width: 5px; height: 5px;
+  border-radius: 50%; flex-shrink: 0;
+}
+
+.b-paf       { background: rgba(251,191,36,0.12); color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
+.b-paf::before { background: var(--yellow); }
+.b-ready     { background: rgba(34,211,238,0.12); color: var(--cyan);   border: 1px solid rgba(34,211,238,0.2); }
+.b-ready::before { background: var(--cyan); }
+.b-denied    { background: rgba(248,113,113,0.12); color: var(--red);   border: 1px solid rgba(248,113,113,0.2); }
+.b-denied::before { background: var(--red); }
+.b-submitted { background: rgba(59,130,246,0.12); color: var(--blue2);  border: 1px solid rgba(59,130,246,0.2); }
+.b-submitted::before { background: var(--blue2); }
+.b-approved  { background: rgba(52,211,153,0.12); color: var(--green);  border: 1px solid rgba(52,211,153,0.2); }
+.b-approved::before { background: var(--green); }
+
+.no-data {
+  text-align: center; padding: 48px 20px;
+  color: var(--text3); font-family: var(--mono); font-size: 12px;
+}
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 28px; right: 28px;
+  background: var(--surface);
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: var(--mono); font-size: 12px;
+  padding: 14px 22px; border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 20px rgba(52,211,153,0.1);
+  transform: translateY(80px) scale(0.95);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 9999; pointer-events: none;
+  display: flex; align-items: center; gap: 8px;
+}
+#toast::before { content: '✓'; font-size: 14px; }
+#toast.show { transform: translateY(0) scale(1); opacity: 1; }
+
+/* ── SPINNER ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin {
+  display: inline-block; width: 13px; height: 13px;
+  border: 2px solid rgba(96,165,250,0.2);
+  border-top-color: var(--blue2);
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  vertical-align: middle;
+}
 </style>
 </head>
 <body>
 
-<!-- Hidden iframe used for no-cors POST submissions -->
-<iframe name="submit-sink" id="submit-sink" style="display:none"></iframe>
+<div id="toast">Record saved successfully</div>
 
-<div id="toast">✓ Record saved successfully</div>
+<div class="page">
 
-<div class="wrapper">
-
-  <header>
-    <div class="logo-block">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-tag">Live · Supabase</div>
       <h1>PA Tracker</h1>
       <p>Prior Authorization Workflow</p>
     </div>
-    <div class="clock">
-      <div class="time" id="clock-time">--:--:-- --</div>
-      <div id="clock-date">--- Eastern Time</div>
+    <div class="clock-block">
+      <div class="clock-time" id="ct">--:--:-- --</div>
+      <div class="clock-date" id="cd">Eastern Time</div>
     </div>
-  </header>
+  </div>
 
   <!-- FORM -->
   <div class="card">
-    <div class="card-title">New Entry</div>
+    <div class="card-shine"></div>
+    <div class="section-label">New Entry</div>
     <div class="form-grid">
+
       <div class="field">
         <label>Key ID</label>
-        <input type="text" id="key-id" placeholder="e.g. PA-2024-001" />
+        <input type="text" id="f-kid" placeholder="e.g. PA-2024-001" autocomplete="off"/>
       </div>
+
       <div class="field">
         <label>Status</label>
-        <select id="status">
-          <option value="">— Select —</option>
+        <select id="f-status">
+          <option value="">— Select Status —</option>
           <option value="PAF">PAF</option>
           <option value="PA Ready to Review">PA Ready to Review</option>
           <option value="Denied">Denied</option>
         </select>
       </div>
+
       <div class="field">
         <label>New Status</label>
-        <select id="new-status">
-          <option value="">— Select —</option>
+        <select id="f-newstatus">
+          <option value="">— Select New Status —</option>
           <option value="PA Ready to Review">PA Ready to Review</option>
           <option value="PAF">PAF</option>
           <option value="PA Submitted">PA Submitted</option>
           <option value="Approved">Approved</option>
         </select>
       </div>
-      <div class="field"><!-- spacer --></div>
-      <div class="field span2">
+
+      <div class="field" style="visibility:hidden"></div>
+
+      <div class="field full">
         <label>Remarks</label>
-        <textarea id="remarks" placeholder="Optional notes..."></textarea>
+        <textarea id="f-remarks" placeholder="Optional notes or comments..."></textarea>
       </div>
+
     </div>
+
     <div class="submit-row">
-      <span class="msg" id="form-msg"></span>
-      <button class="btn btn-primary" id="submit-btn" onclick="submitEntry()">Submit Entry</button>
+      <span class="status-msg" id="f-msg"></span>
+      <button class="btn btn-primary" id="f-btn" onclick="submitEntry()">
+        Submit Entry
+      </button>
     </div>
   </div>
 
   <!-- STATS -->
-  <div class="stats-row">
-    <div class="stat-card day">
+  <div class="stats-grid">
+    <div class="stat stat-d">
+      <div class="stat-glow"></div>
       <div class="stat-label">Today</div>
-      <div class="stat-num" id="count-day">—</div>
+      <div class="stat-value" id="s-day">—</div>
       <div class="stat-sub">submissions</div>
     </div>
-    <div class="stat-card week">
+    <div class="stat stat-w">
+      <div class="stat-glow"></div>
       <div class="stat-label">This Week</div>
-      <div class="stat-num" id="count-week">—</div>
+      <div class="stat-value" id="s-week">—</div>
       <div class="stat-sub">submissions</div>
     </div>
-    <div class="stat-card month">
+    <div class="stat stat-m">
+      <div class="stat-glow"></div>
       <div class="stat-label">This Month</div>
-      <div class="stat-num" id="count-month">—</div>
+      <div class="stat-value" id="s-month">—</div>
       <div class="stat-sub">submissions</div>
     </div>
   </div>
 
   <!-- PROGRESS -->
   <div class="card">
-    <div class="card-title">Progress</div>
-    <div class="progress-item">
-      <div class="progress-header">
-        <span class="progress-label">Daily Goal</span>
-        <span class="progress-meta" id="day-meta">— / —</span>
+    <div class="card-shine"></div>
+    <div class="section-label">Progress vs Goals</div>
+    <div class="progress-list">
+
+      <div class="prog-row">
+        <div class="prog-top">
+          <span class="prog-name">Daily</span>
+          <span class="prog-nums" id="p-day-lbl">— / 10</span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill prog-d" id="p-day" style="width:0%"></div>
+        </div>
       </div>
-      <div class="progress-track"><div class="progress-fill day-fill" id="day-bar" style="width:0%"></div></div>
-    </div>
-    <div class="progress-item">
-      <div class="progress-header">
-        <span class="progress-label">Weekly Goal</span>
-        <span class="progress-meta" id="week-meta">— / —</span>
+
+      <div class="prog-row">
+        <div class="prog-top">
+          <span class="prog-name">Weekly</span>
+          <span class="prog-nums" id="p-week-lbl">— / 50</span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill prog-w" id="p-week" style="width:0%"></div>
+        </div>
       </div>
-      <div class="progress-track"><div class="progress-fill week-fill" id="week-bar" style="width:0%"></div></div>
-    </div>
-    <div class="progress-item">
-      <div class="progress-header">
-        <span class="progress-label">Monthly Goal</span>
-        <span class="progress-meta" id="month-meta">— / —</span>
+
+      <div class="prog-row">
+        <div class="prog-top">
+          <span class="prog-name">Monthly</span>
+          <span class="prog-nums" id="p-month-lbl">— / 200</span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill prog-m" id="p-month" style="width:0%"></div>
+        </div>
       </div>
-      <div class="progress-track"><div class="progress-fill month-fill" id="month-bar" style="width:0%"></div></div>
+
     </div>
   </div>
 
   <!-- TABLE -->
   <div class="card">
-    <div class="table-header">
-      <div class="card-title" style="margin-bottom:0">Recent Entries</div>
-      <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    <div class="card-shine"></div>
+    <div class="table-head">
+      <div class="section-label" style="margin-bottom:0; flex:1">Recent Entries</div>
+      <button class="refresh-btn" onclick="loadEntries()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10.5 6A4.5 4.5 0 1 1 6 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M6 1.5h3v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Refresh
+      </button>
     </div>
-    <div class="table-wrap">
+    <div class="tbl-wrap">
       <table>
         <thead>
           <tr>
-            <th>#</th><th>Key ID</th><th>Status</th><th>New Status</th><th>Remarks</th><th>Date &amp; Time (EST)</th>
+            <th>#</th>
+            <th>Key ID</th>
+            <th>Status</th>
+            <th>New Status</th>
+            <th>Remarks</th>
+            <th>Submitted (EST)</th>
           </tr>
         </thead>
-        <tbody id="table-body">
-          <tr><td colspan="6" class="no-data"><span class="spinner"></span> Loading entries...</td></tr>
+        <tbody id="tbl-body">
+          <tr><td colspan="6" class="no-data"><span class="spin"></span>&nbsp; Loading...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-</div>
+</div><!-- /page -->
 
 <script>
-// ── CONFIG ─────────────────────────────────────────────────────
-const SCRIPT_URL = 'https://script.google.com/a/macros/squadhealth.ai/s/AKfycbwCFNhK8poaZ5OAKVMV0-CIOICcXyrffiLUL23u9GXr6-HZ4pwfntLm7EA0tWL1ifgx/exec';
-const GOALS = { day: 10, week: 50, month: 200 };
+// ── CONFIG ─────────────────────────────────────────────────────────
+const SB_URL = 'https://cuskmyswnptjgjwualne.supabase.co';
+const SB_KEY = 'sb_publishable_1Us4RGSlRzlYWKrAnxH6Hg_DP77py2M';
+const TABLE  = 'entries';
+const GOALS  = { day: 10, week: 50, month: 200 };
 
-// ── CLOCK ──────────────────────────────────────────────────────
-function updateClock() {
+const HEADERS = {
+  'Content-Type':  'application/json',
+  'apikey':        SB_KEY,
+  'Authorization': 'Bearer ' + SB_KEY,
+  'Prefer':        'return=minimal'
+};
+
+// ── CLOCK ──────────────────────────────────────────────────────────
+function tick() {
   const now = new Date();
-  document.getElementById('clock-time').textContent =
+  document.getElementById('ct').textContent =
     now.toLocaleTimeString('en-US', { timeZone:'America/New_York', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true });
-  document.getElementById('clock-date').textContent =
+  document.getElementById('cd').textContent =
     now.toLocaleDateString('en-US', { timeZone:'America/New_York', weekday:'short', month:'short', day:'numeric', year:'numeric' }) + ' EST';
 }
-updateClock();
-setInterval(updateClock, 1000);
+tick(); setInterval(tick, 1000);
 
-// ── SUBMIT via hidden form POST (bypasses CORS) ────────────────
-function submitEntry() {
-  const keyId     = document.getElementById('key-id').value.trim();
-  const status    = document.getElementById('status').value;
-  const newStatus = document.getElementById('new-status').value;
-  const remarks   = document.getElementById('remarks').value.trim();
-  const msgEl     = document.getElementById('form-msg');
-  const btn       = document.getElementById('submit-btn');
-
-  msgEl.className = 'msg'; msgEl.textContent = '';
-
-  if (!keyId || !status || !newStatus) {
-    msgEl.className = 'msg error';
-    msgEl.textContent = 'Key ID, Status, and New Status are required.';
-    return;
-  }
-
-  const timestamp = new Date().toLocaleString('en-US', {
-    timeZone: 'America/New_York',
+// ── EST TIMESTAMP ──────────────────────────────────────────────────
+function estNow() {
+  return new Date().toLocaleString('en-US', {
+    timeZone:'America/New_York',
     year:'numeric', month:'2-digit', day:'2-digit',
     hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true
   });
+}
 
-  btn.disabled = true;
-  msgEl.className = 'msg loading';
-  msgEl.innerHTML = '<span class="spinner"></span>Saving...';
+// ── SUBMIT ─────────────────────────────────────────────────────────
+async function submitEntry() {
+  const keyId     = document.getElementById('f-kid').value.trim();
+  const status    = document.getElementById('f-status').value;
+  const newStatus = document.getElementById('f-newstatus').value;
+  const remarks   = document.getElementById('f-remarks').value.trim();
+  const msg       = document.getElementById('f-msg');
+  const btn       = document.getElementById('f-btn');
 
-  // Build a hidden form that posts to GAS and targets the hidden iframe
-  // This avoids CORS entirely — GAS redirects don't affect invisible iframes
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = SCRIPT_URL;
-  form.target = 'submit-sink'; // hidden iframe, no page redirect
+  msg.className = 'status-msg'; msg.textContent = '';
 
-  const fields = { keyId, status, newStatus, remarks, timestamp };
-  for (const [k, v] of Object.entries(fields)) {
-    const inp = document.createElement('input');
-    inp.type = 'hidden'; inp.name = k; inp.value = v;
-    form.appendChild(inp);
+  if (!keyId || !status || !newStatus) {
+    msg.className = 'status-msg show err';
+    msg.textContent = 'Key ID, Status, and New Status are required.';
+    return;
   }
 
-  document.body.appendChild(form);
-  form.submit();
-  document.body.removeChild(form);
+  btn.disabled = true;
+  msg.className = 'status-msg show wait';
+  msg.innerHTML = '<span class="spin"></span> Saving...';
 
-  // We can't read the iframe response (cross-origin), so we optimistically
-  // confirm after a short delay then refresh data
-  setTimeout(() => {
-    btn.disabled = false;
-    msgEl.className = 'msg success';
-    msgEl.textContent = '✓ Saved at ' + timestamp;
-    document.getElementById('key-id').value     = '';
-    document.getElementById('status').value     = '';
-    document.getElementById('new-status').value = '';
-    document.getElementById('remarks').value    = '';
-    showToast();
-    // Reload after a moment so the new row has been written
-    setTimeout(loadData, 1500);
-  }, 1200);
-}
+  const ts = estNow();
 
-// ── LOAD via JSONP (bypasses CORS for GET) ─────────────────────
-function loadData() {
-  // Remove any stale callback script tag
-  const old = document.getElementById('jsonp-script');
-  if (old) old.remove();
-  if (window.__paTrackerTimeout) clearTimeout(window.__paTrackerTimeout);
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/${TABLE}`, {
+      method: 'POST',
+      headers: HEADERS,
+      body: JSON.stringify({
+        key_id:      keyId,
+        status:      status,
+        new_status:  newStatus,
+        remarks:     remarks,
+        submitted_at: new Date().toISOString()  // stored as UTC in DB
+      })
+    });
 
-  // Timeout fallback
-  window.__paTrackerTimeout = setTimeout(() => {
-    document.getElementById('table-body').innerHTML =
-      '<tr><td colspan="6" class="no-data">⚠ Could not load data — check script deployment.</td></tr>';
-  }, 10000);
-
-  const cbName = 'paTrackerCb_' + Date.now();
-  window[cbName] = function(data) {
-    clearTimeout(window.__paTrackerTimeout);
-    delete window[cbName];
-    if (data.result === 'success') {
-      renderTable(data.rows);
-      computeStats(data.rows);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || err.hint || `HTTP ${res.status}`);
     }
-  };
 
-  const s = document.createElement('script');
-  s.id  = 'jsonp-script';
-  s.src = SCRIPT_URL + '?action=get&callback=' + cbName + '&t=' + Date.now();
-  document.body.appendChild(s);
+    msg.className = 'status-msg show ok';
+    msg.textContent = '✓ Saved at ' + ts;
+
+    document.getElementById('f-kid').value       = '';
+    document.getElementById('f-status').value    = '';
+    document.getElementById('f-newstatus').value = '';
+    document.getElementById('f-remarks').value   = '';
+
+    showToast();
+    setTimeout(loadEntries, 600);
+
+  } catch (e) {
+    msg.className = 'status-msg show err';
+    msg.textContent = '✗ ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
-// ── STATS ──────────────────────────────────────────────────────
+// ── LOAD ENTRIES ───────────────────────────────────────────────────
+async function loadEntries() {
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/${TABLE}?select=*&order=id.desc&limit=100`,
+      { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } }
+    );
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+
+    renderTable(rows);
+    computeStats(rows);
+
+  } catch (e) {
+    document.getElementById('tbl-body').innerHTML =
+      `<tr><td colspan="6" class="no-data">⚠ ${e.message}</td></tr>`;
+  }
+}
+
+// ── STATS ──────────────────────────────────────────────────────────
 function computeStats(rows) {
   const nowEST     = new Date(new Date().toLocaleString('en-US', { timeZone:'America/New_York' }));
   const startDay   = new Date(nowEST); startDay.setHours(0,0,0,0);
@@ -375,59 +767,82 @@ function computeStats(rows) {
 
   let day = 0, week = 0, month = 0;
   rows.forEach(r => {
-    const ts = new Date(r[4]);
+    const ts = new Date(r.submitted_at);
     if (isNaN(ts)) return;
-    if (ts >= startDay)   day++;
-    if (ts >= startWeek)  week++;
-    if (ts >= startMonth) month++;
+    const tsEST = new Date(ts.toLocaleString('en-US', { timeZone:'America/New_York' }));
+    if (tsEST >= startDay)   day++;
+    if (tsEST >= startWeek)  week++;
+    if (tsEST >= startMonth) month++;
   });
 
-  document.getElementById('count-day').textContent   = day;
-  document.getElementById('count-week').textContent  = week;
-  document.getElementById('count-month').textContent = month;
-  setBar('day', day, GOALS.day);
-  setBar('week', week, GOALS.week);
+  document.getElementById('s-day').textContent   = day;
+  document.getElementById('s-week').textContent  = week;
+  document.getElementById('s-month').textContent = month;
+
+  setBar('day',   day,   GOALS.day);
+  setBar('week',  week,  GOALS.week);
   setBar('month', month, GOALS.month);
 }
 
 function setBar(p, val, goal) {
   const pct = Math.min(100, Math.round((val / goal) * 100));
-  document.getElementById(p + '-bar').style.width = pct + '%';
-  document.getElementById(p + '-meta').textContent = val + ' / ' + goal + ' (' + pct + '%)';
+  document.getElementById('p-' + p).style.width = pct + '%';
+  document.getElementById('p-' + p + '-lbl').textContent = val + ' / ' + goal + ' (' + pct + '%)';
 }
 
-// ── TABLE ──────────────────────────────────────────────────────
-const badgeMap = { 'PAF':'badge-paf','PA Ready to Review':'badge-ready','Denied':'badge-denied','PA Submitted':'badge-submitted','Approved':'badge-approved' };
-const badge = v => `<span class="badge ${badgeMap[v]||'badge-paf'}">${esc(v)}</span>`;
-const esc   = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+// ── TABLE ──────────────────────────────────────────────────────────
+const badgeCls = {
+  'PAF':                'b-paf',
+  'PA Ready to Review': 'b-ready',
+  'Denied':             'b-denied',
+  'PA Submitted':       'b-submitted',
+  'Approved':           'b-approved'
+};
+
+function badge(v) {
+  return `<span class="badge ${badgeCls[v] || 'b-paf'}">${esc(v)}</span>`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('en-US', {
+    timeZone:'America/New_York',
+    month:'2-digit', day:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true
+  });
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
 function renderTable(rows) {
-  const tbody = document.getElementById('table-body');
+  const tb = document.getElementById('tbl-body');
   if (!rows || rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="no-data">No entries yet.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="6" class="no-data">No entries yet. Submit your first record above!</td></tr>';
     return;
   }
-  tbody.innerHTML = [...rows].reverse().slice(0,50).map((r,i) => `
+  tb.innerHTML = rows.map((r, i) => `
     <tr>
-      <td>${rows.length - i}</td>
-      <td class="key-id">${esc(r[0])}</td>
-      <td>${badge(r[1])}</td>
-      <td>${badge(r[2])}</td>
-      <td>${esc(r[3])}</td>
-      <td>${esc(r[4])}</td>
+      <td style="color:var(--text3)">${i + 1}</td>
+      <td class="kid">${esc(r.key_id)}</td>
+      <td>${badge(r.status)}</td>
+      <td>${badge(r.new_status)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(r.remarks || '—')}</td>
+      <td>${fmtDate(r.submitted_at)}</td>
     </tr>
   `).join('');
 }
 
-// ── TOAST ──────────────────────────────────────────────────────
+// ── TOAST ──────────────────────────────────────────────────────────
 function showToast() {
   const t = document.getElementById('toast');
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  setTimeout(() => t.classList.remove('show'), 3200);
 }
 
-// Init
-loadData();
+// ── INIT ───────────────────────────────────────────────────────────
+loadEntries();
 </script>
 </body>
 </html>
